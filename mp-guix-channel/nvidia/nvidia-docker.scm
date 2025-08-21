@@ -21,8 +21,7 @@
   #:use-module (gnu packages tls)
   #:use-module (gnu packages elf)
   #:use-module (gnu packages m4)
-  #:use-module (gnu packages linux)
-  #:use-module (nonguix packages nvidia))
+  #:use-module (gnu packages linux))
 
 (define-public nvidia-modprobe
   (package
