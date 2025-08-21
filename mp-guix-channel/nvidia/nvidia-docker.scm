@@ -22,7 +22,7 @@
   #:use-module (gnu packages elf)
   #:use-module (gnu packages m4)
   #:use-module (gnu packages linux)
-  #:use-module (nongnu packages nvda))
+  #:use-module (nongnu packages nvidia-driver))
 
 (define-public nvidia-modprobe
   (package
