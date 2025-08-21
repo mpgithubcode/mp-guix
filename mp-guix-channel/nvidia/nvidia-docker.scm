@@ -1,4 +1,4 @@
-(define-module (mpguix packages nvidia-docker) ;; adapt module name for your own use
+(define-module (mp-guix-channel nvidia nvidia-docker) ;; adapt module name for your own use
   #:use-module (guix gexp)
   #:use-module (guix git-download)
   #:use-module (guix utils)
