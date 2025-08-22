@@ -9,6 +9,8 @@
   #:use-module (guix licenses)
   #:use-module (gnu packages)
   #:use-module (gnu packages docker)
+  #:use-module (gnu packages commencement)
+  #:use-module (gnu packages onc-rpc)
   #:use-module (gnu packages golang)
   #:use-module (gnu packages check)
   #:use-module (gnu packages base)
@@ -21,7 +23,6 @@
   #:use-module (gnu packages m4)
   #:use-module (gnu packages linux))
 
-;; ---------------- nvidia-modprobe ----------------
 (define-public nvidia-modprobe
   (package
     (name "nvidia-modprobe")
@@ -36,33 +37,39 @@
                (base32 "1a7q03pnwk3wa0p57whwv2mvz60bv77vvvaljqzwnscpyf94q548"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:phases
-       ,(modify-phases %standard-phases
+     (list
+      #:phases
+      #~(modify-phases %standard-phases
           (delete 'configure)
           (add-before 'build 'set-correct-cflags
-            (lambda* (#:key outputs #:allow-other-keys)
+            (lambda* (#:key inputs outputs #:allow-other-keys)
               (setenv "CFLAGS" "-fPIC")
+              (display "setting CFLAGS\n")
               (substitute* "modprobe-utils/nvidia-modprobe-utils.c"
                 (("^static int nvidia_cap_get_device_file_attrs")
-                 "int nvidia_cap_get_device_file_attrs"))))
+                 "int nvidia_cap_get_device_file_attrs"))
+              )
+            )
           (add-after 'build 'build-static-link-libraries
-            (lambda* (#:key outputs #:allow-other-keys)
-              (invoke "ar" "rcs" "_out/Linux_x86_64/libnvidia-modprobe-utils.a"
-                      "_out/Linux_x86_64/nvidia-modprobe-utils.o"
-                      "_out/Linux_x86_64/pci-sysfs.o")
-              (copy-recursively "_out/Linux_x86_64/" (string-append outputs "/lib"))))
+            (lambda* (#:key inputs outputs #:allow-other-keys)
+              (invoke "ar" "rcs" "_out/Linux_x86_64/libnvidia-modprobe-utils.a" "_out/Linux_x86_64/nvidia-modprobe-utils.o" "_out/Linux_x86_64/pci-sysfs.o")
+              (copy-recursively "_out/Linux_x86_64/" (string-append (assoc-ref %outputs "out") "/lib"))))
           (delete 'check)
-          (add-after 'patch-source-shebangs 'install-includes
-            (lambda* (#:key outputs #:allow-other-keys)
-              (copy-recursively "modprobe-utils/" (string-append outputs "/include"))
-              #t)))))
-    (native-inputs (list gcc-toolchain m4))
+          (add-after 'patch-source-shebangs 'replace-prefix
+            (lambda* (#:key inputs outputs #:allow-other-keys)
+              (setenv "CC" "gcc")
+              (setenv "PREFIX" (assoc-ref %outputs "out"))
+              (copy-recursively "modprobe-utils/" (string-append (assoc-ref %outputs "out") "/include"))
+              #true) ; must return true for success
+            ))
+      #:tests? #f))
+    (native-inputs
+     (list gcc-toolchain m4))
     (synopsis "Load the NVIDIA kernel module and create NVIDIA character device files")
     (description "Load the NVIDIA kernel module and create NVIDIA character device files")
     (home-page "https://github.com/NVIDIA/nvidia-modprobe")
     (license gpl2)))
 
-;; ---------------- libnvidia-container ----------------
 (define-public libnvidia-container
   (package
     (name "libnvidia-container")
@@ -73,39 +80,64 @@
                     (url "https://github.com/NVIDIA/libnvidia-container")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
-              (patches (list (local-file "libnvidia-container.patch")))
+              (patches (search-patches "libnvidia-container.patch"))
               (sha256
-               (base32 "0rzvh1zhh8pi5xjzaq3nmyzpcvjy41gq8w36dp1ai11a6j2lpa99"))))
+               (base32
+                "0rzvh1zhh8pi5xjzaq3nmyzpcvjy41gq8w36dp1ai11a6j2lpa99"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:phases
-       ,(modify-phases %standard-phases
+     (list
+      #:phases
+      #~(modify-phases %standard-phases
           (delete 'configure)
           (delete 'build)
           (delete 'check)
           (add-after 'unpack 'ensure-writable-source
-            (lambda* (#:allow-other-keys)
+            (lambda* (#:key inputs outputs #:allow-other-keys)
               (setenv "HOME" "/tmp")
-              (for-each make-file-writable '("src/ldcache.c" "src/ldcache.h" "src/nvc_info.c"))))
+              (make-file-writable "src/ldcache.c")
+              (make-file-writable "src/ldcache.h")
+              (make-file-writable "src/nvc_info.c")))
           (add-after 'patch-source-shebangs 'replace-prefix
-            (lambda* (#:key outputs #:allow-other-keys)
+            (lambda* (#:key inputs outputs #:allow-other-keys)
+              (substitute* "Makefile"
+                (("/usr/local") (assoc-ref outputs "out"))  ;this overrides the prefix
+                (("debug??libdir?") "debug")  ;ensure debug files get installed in the correct subdir
+                ((".*nvidia-modprobe.mk.*") "\n")
+                (("^all: shared static tools")
+                 "all: shared tools")
+                ((".*LIB_STATIC.*libdir.*$") ""))
+              (substitute* "mk/nvcgo.mk"
+                ((".*-rf.*")
+                 "\tmkdir -p ${SRCS_DIR} && echo \"sources dir: ${SRCS_DIR}\"\n")
+                (("CURDIR./src/..PREFIX.")
+                 "CURDIR)/src/$(PREFIX)/*")) ;deleting sources fails
               (substitute* "src/cli/libnvc.c"
-                (("libnvidia-ml.so.1") (string-append outputs "/lib/libnvidia-ml.so.1")))
+                (("libnvidia-ml.so.1")
+                 "/run/current-system/profile/lib/libnvidia-ml.so.1"))
               (substitute* "src/nvc_internal.h"
-                (("libnvidia-ml.so.1") (string-append outputs "/lib/libnvidia-ml.so.1")))
-              (setenv "C_INCLUDE_PATH" (string-append (getenv "C_INCLUDE_PATH") ":" libtirpc "/include/tirpc"))
-              (setenv "LIBRARY_PATH" (string-append (getenv "LIBRARY_PATH") ":" libtirpc "/lib"))
-              (setenv "LDFLAGS" (string-append (or (getenv "LDFLAGS") "") " -ltirpc -lseccomp -lcap -Wl,-rpath=" outputs "/lib"))
+                (("libnvidia-ml.so.1")
+                 "/run/current-system/profile/lib/libnvidia-ml.so.1"))
+              (setenv "C_INCLUDE_PATH" (string-append (getenv "C_INCLUDE_PATH") ":" (string-append #$libtirpc "/include/tirpc")))
+              (setenv "LIBRARY_PATH" (string-append (getenv "LIBRARY_PATH") ":" (string-append #$libtirpc "/lib")))
+              (setenv "LDFLAGS" (string-append (or (getenv "LDFLAGS") "") " -ltirpc -lseccomp -lcap -Wl,-rpath=" (assoc-ref outputs "out") "/lib"))
               (setenv "CFLAGS" (string-append (or (getenv "CFLAGS") "") " -DWITH_TIRPC -g"))
-              #t)))))
+              (substitute* "Makefile"
+                (("^WITH_LIBELF.*no")
+                 "WITH_LIBELF ?= yes"))
+              (substitute* "mk/common.mk"
+                (("^REVISION.*")
+                 (string-append "REVISION ?= " #$version "\n" "CC := gcc\n")))
+              #true) ; must return true for success
+            ))
+      #:tests? #f))
     (native-inputs
      (list libseccomp nvidia-modprobe which libtirpc libcap libelf git-minimal curl tar coreutils docker go gcc-toolchain rpcsvc-proto pkgconf))
     (synopsis "Build and run containers leveraging NVIDIA GPUs")
-    (description "The NVIDIA Container Toolkit allows users to build and run GPU accelerated containers.")
+    (description "The NVIDIA Container Toolkit allows users to build and run GPU accelerated containers. The toolkit includes a container runtime library and utilities to automatically configure containers to leverage NVIDIA GPUs.")
     (home-page "https://github.com/NVIDIA/nvidia-container-toolkit")
     (license asl2.0)))
 
-;; ---------------- nvidia-container-toolkit ----------------
 (define-public nvidia-container-toolkit
   (package
     (name "nvidia-container-toolkit")
@@ -117,15 +149,19 @@
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
-               (base32 "01gh57jfpcv07c4442lbf9wiy0l1iwl85ig9drpp0637gbkzgwa4"))))
+               (base32
+                "01gh57jfpcv07c4442lbf9wiy0l1iwl85ig9drpp0637gbkzgwa4"))))
     (build-system go-build-system)
     (arguments
-     `(#:phases
-       ,(modify-phases %standard-phases
+     (list
+      #:import-path "github.com/NVIDIA/nvidia-container-toolkit"
+      #:phases
+      #~(modify-phases %standard-phases
           (add-after 'unpack 'fix-paths
-            (lambda* (#:key outputs #:allow-other-keys)
+            (lambda* (#:key inputs outputs #:allow-other-keys)
               (substitute* "src/github.com/NVIDIA/nvidia-container-toolkit/internal/config/config.go"
-                (("/usr/bin") (string-append outputs "/bin")))))
+(("/usr/bin")
+                 "/run/current-system/profile/bin"))))
           (replace 'build
             (lambda arguments
               (for-each
@@ -134,9 +170,11 @@
                         (append arguments (list #:import-path directory))))
                '("github.com/NVIDIA/nvidia-container-toolkit/cmd/nvidia-ctk"
                  "github.com/NVIDIA/nvidia-container-toolkit/cmd/nvidia-container-runtime"
-                 "github.com/NVIDIA/nvidia-container-toolkit/cmd/nvidia-container-runtime-hook")))))))
-    (propagated-inputs (list libnvidia-container))
+                 "github.com/NVIDIA/nvidia-container-toolkit/cmd/nvidia-container-runtime-hook")))))
+      #:tests? #f
+      #:install-source? #f))
+    (propagated-inputs
+     (list libnvidia-container))
     (synopsis "Build and run containers leveraging NVIDIA GPUs")
-    (description "The NVIDIA Container Toolkit allows users to build and run GPU accelerated containers.")
+    (description "The NVIDIA Container Toolkit allows users to build and run GPU accelerated containers. The toolkit includes a container runtime library and utilities to automatically configure containers to leverage NVIDIA GPUs.")
     (home-page "https://github.com/NVIDIA/nvidia-container-toolkit")
-    (license asl2.0)))
