@@ -43,7 +43,10 @@
           (delete 'configure)
           (add-before 'build 'set-correct-cflags
             (lambda* (#:key inputs outputs #:allow-other-keys)
-              (setenv "CFLAGS" "-fPIC")))
+              (setenv "CFLAGS" "-fPIC")
+              (substitute* "modprobe-utils/nvidia-modprobe-utils.c"
+                (("^static int nvidia_cap_get_device_file_attrs")
+                 "int nvidia_cap_get_device_file_attrs"))))
           (add-after 'build 'build-static-link-libraries
             (lambda* (#:key inputs outputs #:allow-other-keys)
               (invoke "ar" "rcs" "_out/Linux_x86_64/libnvidia-modprobe-utils.a"
@@ -108,27 +111,23 @@
                 (("libnvidia-ml.so.1") "/run/current-system/profile/lib/libnvidia-ml.so.1"))
               (substitute* "src/nvc_internal.h"
                 (("libnvidia-ml.so.1") "/run/current-system/profile/lib/libnvidia-ml.so.1"))
-              (setenv "C_INCLUDE_PATH"
-                      (string-append (getenv "C_INCLUDE_PATH") ":" (string-append #$libtirpc "/include/tirpc")))
-              (setenv "LIBRARY_PATH"
-                      (string-append (getenv "LIBRARY_PATH") ":" (string-append #$libtirpc "/lib")))
-              (setenv "LDFLAGS"
-                      (string-append (or (getenv "LDFLAGS") "")
-                                     " -ltirpc -lseccomp -lcap -Wl,-rpath="
-                                     (assoc-ref outputs "out") "/lib"))
+              (setenv "C_INCLUDE_PATH" (string-append (getenv "C_INCLUDE_PATH") ":" (string-append #$libtirpc "/include/tirpc")))
+              (setenv "LIBRARY_PATH" (string-append (getenv "LIBRARY_PATH") ":" (string-append #$libtirpc "/lib")))
+              (setenv "LDFLAGS" (string-append (or (getenv "LDFLAGS") "") " -ltirpc -lseccomp -lcap -Wl,-rpath=" (assoc-ref outputs "out") "/lib"))
               (setenv "CFLAGS" (string-append (or (getenv "CFLAGS") "") " -DWITH_TIRPC -g"))
               (substitute* "Makefile" (("^WITH_LIBELF.*no") "WITH_LIBELF ?= yes"))
               (substitute* "mk/common.mk" (("^REVISION.*") (string-append "REVISION ?= " #$version "\nCC := gcc\n")))
               #t)))
       #:tests? #f))
     (native-inputs
-     (list libseccomp nvidia-modprobe which libtirpc libcap libelf
-           git-minimal curl tar coreutils docker
-           (package
-            (inherit go-1.20)
-            (arguments (substitute-keyword-arguments (package-arguments go-1.20)
-                         ((#:tests? _ #f) #f))))
-           gcc-toolchain rpcsvc-proto pkgconf))
+     (list
+      libseccomp nvidia-modprobe which libtirpc libcap libelf
+      git-minimal curl tar coreutils docker
+      (package
+       (inherit go-1.20)
+       (arguments (substitute-keyword-arguments (package-arguments go-1.20)
+                    ((#:tests? _ #f) #f))))
+      gcc-toolchain rpcsvc-proto pkgconf))
     (synopsis "Build and run containers leveraging NVIDIA GPUs")
     (description "The NVIDIA Container Toolkit allows users to build and run GPU accelerated containers. The toolkit includes a container runtime library and utilities to automatically configure containers to leverage NVIDIA GPUs.")
     (home-page "https://github.com/NVIDIA/nvidia-container-toolkit")
