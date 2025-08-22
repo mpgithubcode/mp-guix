@@ -118,7 +118,7 @@
               (substitute* "mk/common.mk" (("^REVISION.*") (string-append "REVISION ?= " #$version "\nCC := gcc\n")))
               #true)))
       #:tests? #f))
-    (native-inputs (list libseccomp nvidia-modprobe which libtirpc libcap libelf git-minimal curl tar coreutils docker go gcc-toolchain rpcsvc-proto pkgconf))
+    (native-inputs (list libseccomp nvidia-modprobe which libtirpc libcap libelf git-minimal curl tar coreutils docker go-1.20 gcc-toolchain rpcsvc-proto pkgconf))
     (synopsis "Build and run containers leveraging NVIDIA GPUs")
     (description "The NVIDIA Container Toolkit allows users to build and run GPU accelerated containers. The toolkit includes a container runtime library and utilities to automatically configure containers to leverage NVIDIA GPUs.")
     (home-page "https://github.com/NVIDIA/nvidia-container-toolkit")
