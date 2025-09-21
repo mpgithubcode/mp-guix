@@ -22,7 +22,7 @@
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "REPLACE-WITH-GUIX-DOWNLOAD-HASH"))))
+        (base32 "0gp018zpw4ab4bla62vrax6a45h84c4zkkqjz9ng1iqxid41h79k"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
