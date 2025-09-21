@@ -10,6 +10,7 @@
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages admin)
+  #:use-module (guix build utils)  ;; for nproc
   #:use-module (srfi srfi-1)
   #:use-module (gnu packages linux))
 
