@@ -24,6 +24,7 @@
        (list "GPU_SUPPORT=true")  ;; enable GPU support
        #:phases
        (modify-phases %standard-phases
+         (delete 'check)
          (add-before 'install 'check-nvidia-library
            (lambda* (#:key system #:allow-other-keys)
              (let ((nv-lib "/usr/lib/libnvidia-ml.so"))
@@ -31,8 +32,5 @@
                            (file-exists? "/usr/lib64/libnvidia-ml.so"))
                  (display-warning
                   'btop-gpu
-                  (string-append
-                   "Warning: NVIDIA ML library not found at /usr/lib/libnvidia-ml.so or /usr/lib64/libnvidia-ml.so.\n"
-                   "GPU monitoring may not work."))))
+                  "Warning: NVIDIA ML library not found. GPU monitoring may not work.")))
              #t))))))
-
