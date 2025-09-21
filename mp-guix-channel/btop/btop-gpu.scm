@@ -37,4 +37,4 @@
          (add-before 'install 'build-btop-gpu
            (lambda* (#:key outputs #:allow-other-keys)
              (invoke "make" (list "-j" (number->string (nproc)) "GPU_SUPPORT=true"))
-             #t))))))
+             #t))))))))
