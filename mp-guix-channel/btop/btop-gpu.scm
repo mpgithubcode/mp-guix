@@ -1,4 +1,3 @@
-;; btop-gpu.scm
 (define-module (mp-guix-channel btop btop-gpu)
   #:use-module (guix packages)
   #:use-module (guix download)
@@ -22,24 +21,20 @@
     (arguments
      `(#:make-flags (list "GPU_SUPPORT=true")
        #:phases
-       (list
-        ;; Build phase
-        (lambda* (#:key outputs #:allow-other-keys)
-          (invoke "make" (append '() ,(list "-j" (number->string (nproc))) '("GPU_SUPPORT=true")))
-          #t)
-
-        ;; Pre-install NVIDIA check
-        (lambda* (#:key outputs #:allow-other-keys)
-          (let ((nv-lib "/usr/lib/libnvidia-ml.so"))
-            (unless (or (file-exists? nv-lib)
-                        (file-exists? "/usr/lib64/libnvidia-ml.so"))
-              (display-warning
-               'btop-gpu
-               "Warning: NVIDIA ML library not found. GPU monitoring may not work.")))
-          #t)
-
-        ;; Install phase
-        (lambda* (#:key outputs #:allow-other-keys)
-          (install-file "bin/btop"
-                        (string-append (assoc-ref outputs "out") "/bin/btop"))
-          #t))))))
+       (modify-phases %standard-phases
+         (delete 'check)
+         ;; Pre-install NVIDIA check
+         (add-before 'install 'check-nvidia-library
+           (lambda* (#:key outputs #:allow-other-keys)
+             (let ((nv-lib "/usr/lib/libnvidia-ml.so"))
+               (unless (or (file-exists? nv-lib)
+                           (file-exists? "/usr/lib64/libnvidia-ml.so"))
+                 (display-warning
+                  'btop-gpu
+                  "Warning: NVIDIA ML library not found. GPU monitoring may not work.")))
+             #t))
+         ;; Build phase
+         (add-before 'install 'build-btop-gpu
+           (lambda* (#:key outputs #:allow-other-keys)
+             (invoke "make" (list "-j" (number->string (nproc)) "GPU_SUPPORT=true"))
+             #t))))))
