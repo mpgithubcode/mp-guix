@@ -1,3 +1,4 @@
+;; btop-gpu.scm
 (define-module (mp-guix-channel btop btop-gpu)
   #:use-module (guix packages)
   #:use-module (guix download)
@@ -12,7 +13,6 @@
   #:use-module (srfi srfi-1)
   #:use-module (gnu packages linux)) ; for lm-sensors
 
-
 (define-public btop-gpu
   (package
     (inherit btop)  ;; inherit everything from the original btop package
@@ -24,13 +24,14 @@
        (list "GPU_SUPPORT=true")  ;; enable GPU support
        #:phases
        (modify-phases %standard-phases
-         (delete 'check)
+         (delete 'check)  ;; remove the default 'check' phase
          (add-before 'install 'check-nvidia-library
            (lambda* (#:key system #:allow-other-keys)
+             ;; warn if NVIDIA ML library is missing
              (let ((nv-lib "/usr/lib/libnvidia-ml.so"))
                (unless (or (file-exists? nv-lib)
                            (file-exists? "/usr/lib64/libnvidia-ml.so"))
                  (display-warning
                   'btop-gpu
                   "Warning: NVIDIA ML library not found. GPU monitoring may not work.")))
-             #t))))))
+             #t)))))))
