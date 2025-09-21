@@ -8,38 +8,31 @@
   #:use-module (gnu packages cmake)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages bash)
+  #:use-module (guix packages btop)
+  #:use-module (srfi srfi-1)
   #:use-module (gnu packages linux)) ; for lm-sensors
+
 
 (define-public btop-gpu
   (package
+    (inherit btop)  ;; inherit everything from the original btop package
     (name "btop-gpu")
-    (version "1.3.2")
-    (source
-     (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://github.com/aristocratos/btop.git")
-             (commit (string-append "v" version))))
-       (file-name (git-file-name name version))
-       (sha256
-        (base32 "084n0nbv1029lvfv4na2k9fqyray7m77dff1537b8ffk08ib4d4j"))))
-    (build-system gnu-build-system)
+    (version "1.2.17")  ;; keep the same version as upstream btop
     (arguments
-     `(#:make-flags
-       (list (string-append "PREFIX=" (assoc-ref %outputs "out")))
+     `(#:configure-flags '()
+       #:make-flags
+       (list "GPU_SUPPORT=true")  ;; enable GPU support
        #:phases
        (modify-phases %standard-phases
-         (delete 'configure))))
-    (inputs
-     (list ncurses
-           bash
-           lm-sensors)) ; enables hwmon/GPU sensor access
-    (native-inputs
-     (list cmake pkg-config))
-    (home-page "https://github.com/aristocratos/btop")
-    (synopsis "Resource monitor with optional GPU support")
-    (description
-     "A resource monitor for CPU, memory, disks, network and processes.
-      This variant is prepared for GPU monitoring if the appropriate runtime
-      libraries (such as libnvidia-ml for NVIDIA or rocm-smi for AMD) are available.")
-    (license asl2.0)))
+         (add-before 'install 'check-nvidia-library
+           (lambda* (#:key system #:allow-other-keys)
+             (let ((nv-lib "/usr/lib/libnvidia-ml.so"))
+               (unless (or (file-exists? nv-lib)
+                           (file-exists? "/usr/lib64/libnvidia-ml.so"))
+                 (display-warning
+                  'btop-gpu
+                  (string-append
+                   "Warning: NVIDIA ML library not found at /usr/lib/libnvidia-ml.so or /usr/lib64/libnvidia-ml.so.\n"
+                   "GPU monitoring may not work."))))
+             #t))))))
+
