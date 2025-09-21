@@ -15,16 +15,15 @@
 
 (define-public btop-gpu
   (package
-    (inherit btop)  ;; inherit everything from the original btop package
+    (inherit btop)
     (name "btop-gpu")
-    (version "1.4.4")  ;; keep the same version as upstream btop
+    (version "1.4.4")
     (arguments
      `(#:configure-flags '()
-       #:make-flags
-       (list "GPU_SUPPORT=true")  ;; enable GPU support
+       #:make-flags (list "GPU_SUPPORT=true")
        #:phases
        (modify-phases %standard-phases
-         (delete 'check)  ;; remove the default 'check' phase
+         (delete 'check)  ;; remove the check phase
          (add-before 'install 'check-nvidia-library
            (lambda* (#:key system #:allow-other-keys)
              ;; warn if NVIDIA ML library is missing
