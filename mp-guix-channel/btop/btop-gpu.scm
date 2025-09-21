@@ -38,8 +38,8 @@
 
          ;; Replace the build phase to include GPU support
          (replace 'build
-                  (lambda* (#:key outputs #:allow-other-keys)
-                    (invoke "make"
-                            (list "-j" (number->string (nproc))
-                                  "GPU_SUPPORT=true"))
-                    #t))))))))
+           (lambda* (#:key outputs #:allow-other-keys)
+             (invoke "make"
+                     (list "-j" (number->string (nproc))
+                           "GPU_SUPPORT=true"))
+             #t))))))))
