@@ -8,6 +8,7 @@
   #:use-module (gnu packages cmake)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages bash)
+  #:use-module (gnu packages admin)
   #:use-module (srfi srfi-1)
   #:use-module (gnu packages linux)) ; for lm-sensors
 
