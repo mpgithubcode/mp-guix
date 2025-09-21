@@ -17,7 +17,7 @@
   (package
     (inherit btop)  ;; inherit everything from the original btop package
     (name "btop-gpu")
-    (version "1.2.17")  ;; keep the same version as upstream btop
+    (version "1.4.4")  ;; keep the same version as upstream btop
     (arguments
      `(#:configure-flags '()
        #:make-flags
