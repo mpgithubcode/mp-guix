@@ -1,3 +1,4 @@
+;; btop-gpu.scm
 (define-module (mp-guix-channel btop btop-gpu)
   #:use-module (guix packages)
   #:use-module (guix download)
@@ -14,20 +15,19 @@
 
 (define-public btop-gpu
   (package
-    (inherit btop)
+    (inherit btop)  ;; inherit everything from the original btop package
     (name "btop-gpu")
-    (version "1.4.4")
+    (version "1.4.4")  ;; keep the same version as upstream btop
     (arguments
      `(#:configure-flags '()
-       #:make-flags (list "GPU_SUPPORT=true")
+       #:make-flags
+       (list "GPU_SUPPORT=true")  ;; enable GPU support
        #:phases
        (modify-phases %standard-phases
-         ;; Remove the default 'check' phase completely
-         (assq-delete-all 'check)
-
-         ;; Add a phase to warn if NVIDIA ML library is missing
+         (delete 'check)  ;; remove the default 'check' phase
          (add-before 'install 'check-nvidia-library
            (lambda* (#:key system #:allow-other-keys)
+             ;; warn if NVIDIA ML library is missing
              (let ((nv-lib "/usr/lib/libnvidia-ml.so"))
                (unless (or (file-exists? nv-lib)
                            (file-exists? "/usr/lib64/libnvidia-ml.so"))
