@@ -22,7 +22,7 @@
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0gp018zpw4ab4bla62vrax6a45h84c4zkkqjz9ng1iqxid41h79k"))))
+        (base32 "084n0nbv1029lvfv4na2k9fqyray7m77dff1537b8ffk08ib4d4j"))))
     (build-system gnu-build-system)
     (arguments
      `(#:make-flags
