@@ -11,7 +11,7 @@
   #:use-module (gnu packages bash)
   #:use-module (gnu packages admin)
   #:use-module (srfi srfi-1)
-  #:use-module (gnu packages linux)) ; for lm-sensors
+  #:use-module (gnu packages linux))
 
 (define-public btop-gpu
   (package
@@ -21,20 +21,24 @@
     (arguments
      `(#:make-flags (list "GPU_SUPPORT=true")
        #:phases
-       (let ((phases '()))
-         ;; Only run build and install phases
-         (set! phases
-               (append
-                (list 'build 'install)
-                phases))
-         ;; Insert a pre-install NVIDIA library check
-         (add-before 'install 'check-nvidia-library
-           (lambda* (#:key system #:allow-other-keys)
-             (let ((nv-lib "/usr/lib/libnvidia-ml.so"))
-               (unless (or (file-exists? nv-lib)
-                           (file-exists? "/usr/lib64/libnvidia-ml.so"))
-                 (display-warning
-                  'btop-gpu
-                  "Warning: NVIDIA ML library not found. GPU monitoring may not work.")))
-             #t)
-           phases))))))
+       (list
+        ;; Build phase
+        (lambda* (#:key outputs #:allow-other-keys)
+          (invoke "make" (append '() ,(list "-j" (number->string (nproc))) '("GPU_SUPPORT=true")))
+          #t)
+
+        ;; Pre-install NVIDIA check
+        (lambda* (#:key outputs #:allow-other-keys)
+          (let ((nv-lib "/usr/lib/libnvidia-ml.so"))
+            (unless (or (file-exists? nv-lib)
+                        (file-exists? "/usr/lib64/libnvidia-ml.so"))
+              (display-warning
+               'btop-gpu
+               "Warning: NVIDIA ML library not found. GPU monitoring may not work.")))
+          #t)
+
+        ;; Install phase
+        (lambda* (#:key outputs #:allow-other-keys)
+          (install-file "bin/btop"
+                        (string-append (assoc-ref outputs "out") "/bin/btop"))
+          #t))))))
