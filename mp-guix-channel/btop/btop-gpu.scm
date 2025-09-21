@@ -9,7 +9,7 @@
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages admin)
-  #:use-module (guix build utils)  ;; for nproc
+  #:use-module (guix build utils) ;; for nproc
   #:use-module (srfi srfi-1)
   #:use-module (gnu packages linux))
 
@@ -23,28 +23,26 @@
        #:phases
        (let ((phases %standard-phases))
          ;; Remove the default check phase
-         (set! phases (delete 'check phases))
+         (set! phases (filter (lambda (x) (not (eq? x 'check))) phases))
 
-         ;; Add a pre-install NVIDIA check
+         ;; Add build phase
          (set! phases
-               (add-before 'install 'check-nvidia-library
-                           (lambda* (#:key outputs #:allow-other-keys)
-                             (let ((nv-lib "/usr/lib/libnvidia-ml.so"))
-                               (unless (or (file-exists? nv-lib)
-                                           (file-exists? "/usr/lib64/libnvidia-ml.so"))
-                                 (display-warning
-                                  'btop-gpu
-                                  "Warning: NVIDIA ML library not found. GPU monitoring may not work.")))
-                             #t)
-                           phases))
+               (cons (lambda* (#:key outputs #:allow-other-keys)
+                       (invoke "make" (list "-j" (number->string (nproc))
+                                            "GPU_SUPPORT=true"))
+                       #t)
+                     phases))
 
-         ;; Add build phase before install
+         ;; Add NVIDIA pre-install check
          (set! phases
-               (add-before 'install 'build-btop-gpu
-                           (lambda* (#:key outputs #:allow-other-keys)
-                             (invoke "make" (list "-j" (number->string (nproc))
-                                                  "GPU_SUPPORT=true"))
-                             #t)
-                           phases))
+               (cons (lambda* (#:key outputs #:allow-other-keys)
+                       (let ((nv-lib "/usr/lib/libnvidia-ml.so"))
+                         (unless (or (file-exists? nv-lib)
+                                     (file-exists? "/usr/lib64/libnvidia-ml.so"))
+                           (display-warning
+                            'btop-gpu
+                            "Warning: NVIDIA ML library not found. GPU monitoring may not work.")))
+                       #t)
+                     phases))
 
          phases)))))
