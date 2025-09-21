@@ -15,23 +15,26 @@
 
 (define-public btop-gpu
   (package
-    (inherit btop)  ;; inherit everything from the original btop package
+    (inherit btop)
     (name "btop-gpu")
-    (version "1.4.4")  ;; keep the same version as upstream btop
+    (version "1.4.4")
     (arguments
-     `(#:configure-flags '()
-       #:make-flags
-       (list "GPU_SUPPORT=true")  ;; enable GPU support
+     `(#:make-flags (list "GPU_SUPPORT=true")
        #:phases
-       (modify-phases %standard-phases
-         (delete 'check)  ;; remove the default 'check' phase
+       (let ((phases '()))
+         ;; Only run build and install phases
+         (set! phases
+               (append
+                (list 'build 'install)
+                phases))
+         ;; Insert a pre-install NVIDIA library check
          (add-before 'install 'check-nvidia-library
            (lambda* (#:key system #:allow-other-keys)
-             ;; warn if NVIDIA ML library is missing
              (let ((nv-lib "/usr/lib/libnvidia-ml.so"))
                (unless (or (file-exists? nv-lib)
                            (file-exists? "/usr/lib64/libnvidia-ml.so"))
                  (display-warning
                   'btop-gpu
                   "Warning: NVIDIA ML library not found. GPU monitoring may not work.")))
-             #t)))))))
+             #t)
+           phases))))))
