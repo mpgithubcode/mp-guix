@@ -1,4 +1,4 @@
-(define-module (mp-guix mp-guix-channel btop btop-gpu)
+(define-module (mp-guix-channel btop btop-gpu)
   #:use-module (guix packages)
   #:use-module (guix download)
   #:use-module (guix git-download)
