@@ -38,6 +38,6 @@
          (replace 'build
            (lambda* (#:key outputs #:allow-other-keys)
              (invoke "make"
-                     (list "-j" (number->string (guix build utils:nproc))
-                           "GPU_SUPPORT=true"))
+                     (append (list "-j" (number->string (nproc)))
+                             (list "GPU_SUPPORT=true")))
              #t)))))))
