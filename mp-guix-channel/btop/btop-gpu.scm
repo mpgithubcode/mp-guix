@@ -20,10 +20,8 @@
     (name "btop-gpu")
     (version "1.4.4")
     (native-inputs
-     (alist-cons 'gcc-toolchain gcc-toolchain
-                 (alist-delete "_"
-                               (package-native-inputs btop)
-                               equal?)))
+     (cons (list 'gcc-toolchain gcc-toolchain)
+           (alist-delete "_" (package-native-inputs btop) equal?)))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
@@ -36,3 +34,4 @@
                      "GPU_SUPPORT=true"
                      "CC=gcc"
                      "CXX=g++"))))))))
+
