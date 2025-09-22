@@ -11,7 +11,8 @@
   #:use-module (srfi srfi-1)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages rocm)  ;; Ensure ROCm support is available
-  #:use-module (gnu packages commencement))  ;; for gcc-toolchain
+  #:use-module (gnu packages commencement)  ;; for gcc-toolchain
+  #:use-module (guix utils))  ;; for package-input-rewriting helpers
 
 (define-public btop-gpu
   (package
@@ -21,7 +22,8 @@
     (native-inputs
      (append
       (list gcc-toolchain)
-      (package-native-inputs btop)))
+      (alist-delete "_"
+                    (package-native-inputs btop))))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
@@ -34,4 +36,3 @@
                      "GPU_SUPPORT=true"
                      "CC=gcc"
                      "CXX=g++"))))))))
-
