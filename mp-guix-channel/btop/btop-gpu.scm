@@ -12,7 +12,8 @@
   #:use-module (gnu packages linux)
   #:use-module (gnu packages rocm)  ;; Ensure ROCm support is available
   #:use-module (gnu packages commencement)  ;; for gcc-toolchain
-  #:use-module (guix utils))  ;; for package-input-rewriting helpers
+  #:use-module (guix utils)  ;; for package-input-rewriting helpers
+  #:use-module (guix packages base))  ;; added to resolve unbound-variable error
 
 (define-public btop-gpu
   (package
