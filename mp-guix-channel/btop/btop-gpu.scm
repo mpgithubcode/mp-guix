@@ -32,6 +32,6 @@
            (lambda* (#:key outputs #:allow-other-keys)
              (invoke "make"
                      "GPU_SUPPORT=true"
-                     (string-append "CC=" ,(cc-for-target))
-                     (string-append "CXX=" ,(cxx-for-target))))))))))
+                     "CC=gcc"
+                     "CXX=g++"))))))))
 
