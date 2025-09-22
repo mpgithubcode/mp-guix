@@ -7,6 +7,7 @@
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages admin)
+  #:use-module (guix build utils)  ;; provides nproc
   #:use-module (srfi srfi-1)
   #:use-module (gnu packages linux))
 
@@ -33,8 +34,26 @@
                   "Warning: NVIDIA ML library not found. GPU monitoring may not work.")))
              #t))
 
-         ;; Replace build phase to explicitly call make with GPU support
+         ;; Replace build phase with explicit GPU build
          (replace 'build
            (lambda* (#:key outputs #:allow-other-keys)
-             (invoke "make" "GPU_SUPPORT=true")
-             #t)))))))
+             (setenv "CC" "gcc")  ;; Explicitly set CC to gcc
+             (invoke "make"
+                     (append (list "-j" (number->string (nproc)))
+                             (list "GPU_SUPPORT=true")))))
+       #:tests? #f))  ;; Disable tests for this package
+
+    (native-inputs
+     `(("pkg-config" ,pkg-config)
+       ("nvidia-utils" ,nvidia-utils)
+       ("rocm-smi-lib" ,rocm-smi-lib)))
+
+    (inputs
+     `(("ncurses" ,ncurses)
+       ("libfmt" ,libfmt)))
+
+    (home-page "https://github.com/aristocratos/btop")
+    (synopsis "Resource monitor with GPU support")
+    (description
+     "btop is a resource monitor that shows usage and stats for processor, memory, disks, network and processes. This variant includes GPU support.")
+    (license license:mit)))
