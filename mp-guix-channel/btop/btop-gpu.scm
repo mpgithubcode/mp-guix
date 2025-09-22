@@ -10,9 +10,7 @@
   #:use-module (guix build utils)  ;; provides nproc
   #:use-module (srfi srfi-1)
   #:use-module (gnu packages linux)
-  #:use-module (guix build-system gnu)
   #:use-module (gnu packages rocm))  ;; Ensure ROCm support is available
-
 
 (define-public btop-gpu
   (package
@@ -22,9 +20,9 @@
     (arguments
      `(#:phases
        (modify-phases %standard-phases
-         ;; Remove configure phase since btop has none
+         ;; Remove configure phase (btop doesn’t have one)
          (delete 'configure)
-         ;; Replace build phase to enable GPU support
+         ;; Replace build phase with GPU flag
          (replace 'build
            (lambda* (#:key outputs #:allow-other-keys)
-             (invoke "make" (list "GPU_SUPPORT=true")))))))))
+             (invoke "make" "GPU_SUPPORT=true")))))))))
