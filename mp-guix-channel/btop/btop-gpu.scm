@@ -12,8 +12,7 @@
   #:use-module (gnu packages linux)
   #:use-module (gnu packages rocm)  ;; Ensure ROCm support is available
   #:use-module (gnu packages commencement)  ;; for gcc-toolchain
-  #:use-module (guix utils)  ;; for package-input-rewriting helpers
-  #:use-module (guix packages base))  ;; added to resolve unbound-variable error
+  #:use-module (guix utils))  ;; for package-input-rewriting helpers
 
 (define-public btop-gpu
   (package
@@ -21,10 +20,10 @@
     (name "btop-gpu")
     (version "1.4.4")
     (native-inputs
-     (append
-      (list gcc-toolchain)
-      (alist-delete "_"
-                    (package-native-inputs btop))))
+     (alist-cons 'gcc-toolchain gcc-toolchain
+                 (alist-delete "_"
+                               (package-native-inputs btop)
+                               equal?)))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
