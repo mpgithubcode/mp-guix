@@ -20,7 +20,6 @@
     (arguments
      `(#:phases
        (modify-phases %standard-phases
-         ;; Replace build phase to enable GPU support
          (replace 'build
            (lambda* (#:key outputs #:allow-other-keys)
-             (invoke "make" (list "GPU_SUPPORT=true"))))))))
+             (invoke "make" (list "GPU_SUPPORT=true")))))))))
