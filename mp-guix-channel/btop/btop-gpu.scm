@@ -39,9 +39,7 @@
            (lambda* (#:key outputs #:allow-other-keys)
              (setenv "CC" "gcc")  ;; Explicitly set CC to gcc
              (invoke "make"
-                     (append (list "-j" (number->string (nproc)))
-                             (list "GPU_SUPPORT=true")))))
-       #:tests? #f))  ;; Disable tests for this package
+                     (list "GPU_SUPPORT=true")))))))
 
     (native-inputs
      `(("pkg-config" ,pkg-config)
