@@ -9,18 +9,30 @@
   #:use-module (gnu packages admin)
   #:use-module (guix build utils)  ;; provides nproc
   #:use-module (srfi srfi-1)
-  #:use-module (gnu packages linux))
+  #:use-module (gnu packages linux)
+  #:use-module (gnu packages nvidia)  ;; Ensure NVIDIA utilities are available
+  #:use-module (gnu packages rocm))  ;; Ensure ROCm support is available
 
+;; Assuming the btop package is defined elsewhere, we inherit it.
+;; If it isn't defined, we would need to create the btop package.
 (define-public btop-gpu
   (package
-    (inherit btop)
+    (inherit btop)  ;; Inherit from the existing btop package (ensure btop is defined)
     (name "btop-gpu")
     (version "1.4.4")
+    (source (origin
+             (method git-fetch)
+             (uri (git-reference
+                   (url "https://github.com/aristocratos/btop")
+                   (commit version)))
+             (sha256
+              (base32
+               "0w35v8kfyxs0q9d64d67nklpkrgklh38jsfpmmgnfzb0wj7lhxf7"))))
     (build-system gnu-build-system)
     (arguments
      `(#:phases
        (modify-phases %standard-phases
-         ;; Remove configure phase
+         ;; Remove configure phase (as it's not needed for this package)
          (delete 'configure)
 
          ;; Pre-install NVIDIA library check
@@ -41,6 +53,7 @@
              (invoke "make"
                      (list "GPU_SUPPORT=true")))))))
 
+
     (native-inputs
      `(("pkg-config" ,pkg-config)
        ("nvidia-utils" ,nvidia-utils)
@@ -55,3 +68,4 @@
     (description
      "btop is a resource monitor that shows usage and stats for processor, memory, disks, network and processes. This variant includes GPU support.")
     (license license:mit)))
+
