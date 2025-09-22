@@ -10,13 +10,17 @@
   #:use-module (guix build utils)  ;; provides nproc
   #:use-module (srfi srfi-1)
   #:use-module (gnu packages linux)
-  #:use-module (gnu packages rocm))  ;; Ensure ROCm support is available
+  #:use-module (gnu packages rocm)
+  #:use-module (gnu packages commencement))  ;; for gcc-toolchain
 
 (define-public btop-gpu
   (package
     (inherit btop)
     (name "btop-gpu")
     (version "1.4.4")
+    (inputs
+     (modify-inputs (package-inputs btop)
+       (append gcc-toolchain)))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
