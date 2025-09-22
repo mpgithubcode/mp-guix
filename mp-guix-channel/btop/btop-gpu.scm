@@ -25,4 +25,4 @@
          ;; Replace build phase with GPU flag
          (replace 'build
            (lambda* (#:key outputs #:allow-other-keys)
-             (invoke "make" "GPU_SUPPORT=true")))))))))
+             (invoke "make" "GPU_SUPPORT=true"))))))))
