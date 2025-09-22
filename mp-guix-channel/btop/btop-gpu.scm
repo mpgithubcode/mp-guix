@@ -10,7 +10,6 @@
   #:use-module (guix build utils)  ;; provides nproc
   #:use-module (srfi srfi-1)
   #:use-module (gnu packages linux)
-  #:use-module (gnu packages nvidia)  ;; Ensure NVIDIA utilities are available
   #:use-module (gnu packages rocm))  ;; Ensure ROCm support is available
 
 (define-public btop-gpu
