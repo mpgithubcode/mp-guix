@@ -7,7 +7,6 @@
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages admin)
-  #:use-module (guix build utils)  ;; provides nproc
   #:use-module (srfi srfi-1)
   #:use-module (gnu packages linux))
 
@@ -34,10 +33,8 @@
                   "Warning: NVIDIA ML library not found. GPU monitoring may not work.")))
              #t))
 
-         ;; Replace build phase with explicit GPU build
+         ;; Replace build phase to explicitly call make with GPU support
          (replace 'build
            (lambda* (#:key outputs #:allow-other-keys)
-             (invoke "make"
-                     (append (list "-j" (number->string (nproc)))
-                             (list "GPU_SUPPORT=true")))
+             (invoke "make" "GPU_SUPPORT=true")
              #t)))))))
