@@ -21,7 +21,7 @@
     (version "1.4.4")
     (native-inputs
      (cons (list 'gcc-toolchain gcc-toolchain)
-           (alist-delete "_" (package-native-inputs btop) equal?)))
+           (package-native-inputs btop)))
     (arguments
      `(#:phases
        (modify-phases %standard-phases
@@ -34,4 +34,3 @@
                      "GPU_SUPPORT=true"
                      "CC=gcc"
                      "CXX=g++"))))))))
-
